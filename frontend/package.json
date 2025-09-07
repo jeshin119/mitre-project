@@ -1,0 +1,57 @@
+{
+  "name": "vintage-market-frontend",
+  "version": "1.0.0",
+  "description": "중고거래 플랫폼",
+  "private": true,
+  "engines": {
+    "node": "10.13.0",
+    "npm": ">=6.0.0"
+  },
+  "dependencies": {
+    "axios": "^0.21.4",
+    "moment": "^2.24.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "react-hook-form": "^6.15.8",
+    "react-icons": "^3.11.0",
+
+    "react-router-dom": "^5.3.4",
+    "react-toastify": "^6.2.0",
+    "socket.io-client": "^2.4.0",
+    "styled-components": "^4.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.3",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/preset-react": "^7.12.5",
+    "babel-loader": "^8.2.1",
+    "css-loader": "^5.0.1",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^4.5.0",
+    "style-loader": "^2.0.0",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "eslint": "^6.8.0",
+    "prettier": "^2.2.1"
+  },
+  "scripts": {
+    "dev": "webpack-dev-server --mode development --hot",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "lint": "eslint src --ext .js,.jsx",
+    "format": "prettier --write src/**/*.{js,jsx,css,md}"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

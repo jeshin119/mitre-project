@@ -1,0 +1,19 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<fingerprint>
+  <timestamp>2025-09-04 01:16:44.46 UTC</timestamp>
+  <md5sum>11f12a1e8d71fa9f0cd1617158a1850e</md5sum>
+  <fileName>Credential id=team2 name=team2/******</fileName>
+  <usages>
+    <entry>
+      <string>cicd/main</string>
+      <ranges>1-73</ranges>
+    </entry>
+  </usages>
+  <facets>
+    <com.cloudbees.plugins.credentials.fingerprints.ItemCredentialsFingerprintFacet plugin="credentials@1384.vf0a_2ed06f9c6">
+      <timestamp>1757216315651</timestamp>
+      <itemFullName>cicd</itemFullName>
+      <timestamp0>1757216315395</timestamp0>
+    </com.cloudbees.plugins.credentials.fingerprints.ItemCredentialsFingerprintFacet>
+  </facets>
+</fingerprint>

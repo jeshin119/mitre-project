@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.jenkins.plugins</groupId>
+  <artifactId>gitea-checks</artifactId>
+  <version>513.vb_b_a_98c46ec22</version>
+  <packaging>hpi</packaging>
+  <name>Gitea Checks plugin</name>
+  <description>This static analysis POM serves as parent POM for all my Jenkins Plugins. It basically enhances the
+    Parent POM for Jenkins Plugins (see https://github.com/jenkinsci/plugin-pom) with a predefined configuration of
+    several static analysis tools. Additionally, it provides a fix set of test dependencies that are common
+    to all my plugins. This POM enforces the Java style guide (see https://github.com/uhafner/codingstyle) that I am
+    using in these plugins (and in my lectures at the Munich University of Applied Sciences).</description>
+  <url>https://github.com/jenkinsci/gitea-checks-plugin</url>
+  <inceptionYear>2016</inceptionYear>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/mit</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>xiongkezhi</id>
+      <name>Kezhi Xiong</name>
+      <email>august.xkz@gmail.com</email>
+    </developer>
+    <developer>
+      <id>flozzone</id>
+      <name>Florin Hillebrand</name>
+      <email>flozzone@gmail.com</email>
+    </developer>
+    <developer>
+      <id>viceice</id>
+      <name>Michael Kriese</name>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/jenkinsci/gitea-checks-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/gitea-checks-plugin.git</developerConnection>
+    <tag>bba98c46ec226677898df918bad21ae2d797445e</tag>
+    <url>https://github.com/jenkinsci/gitea-checks-plugin</url>
+  </scm>
+  <distributionManagement>
+    <repository>
+      <id>maven.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>maven.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+  <dependencies>
+    <dependency>
+      <groupId>io.jenkins.plugins</groupId>
+      <artifactId>checks-api</artifactId>
+      <version>2.2.1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins.plugins</groupId>
+      <artifactId>plugin-util-api</artifactId>
+      <version>5.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>credentials</artifactId>
+      <version>1384.vf0a_2ed06f9c6</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>gitea</artifactId>
+      <version>234.v60def593ec50</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins.workflow</groupId>
+      <artifactId>workflow-cps</artifactId>
+      <version>4009.v0089238351a_9</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins.workflow</groupId>
+      <artifactId>workflow-job</artifactId>
+      <version>1436.vfa_244484591f</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <version>3.57</version>
+        <extensions>true</extensions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
