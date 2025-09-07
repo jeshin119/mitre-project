@@ -2,27 +2,61 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // API base URL configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://192.168.201.102:3001/api";
 
 // Backend base URL for images (without /api)
-const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3000";
+const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.201.102:3001";
 
 // Utility function to get proper image URLs
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
+
+  // If it's already an array, get the first image
+  if (Array.isArray(imagePath)) {
+    if (imagePath.length > 0) {
+      imagePath = imagePath[0];
+    } else {
+      return null;
+    }
+  }
+
+  // If it's a JSON string (array), parse it and get the first image
+  if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
+    try {
+      const images = JSON.parse(imagePath);
+      if (Array.isArray(images) && images.length > 0) {
+        imagePath = images[0];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      console.error('Error parsing image JSON:', e);
+      return null;
+    }
+  }
+
+  // Ensure imagePath is a string before calling startsWith
+  if (typeof imagePath !== 'string') {
+    console.error('imagePath is not a string:', imagePath);
+    return null;
+  }
 
   // If it's already a full URL, return as is
   if (imagePath.startsWith("http")) {
     return imagePath;
   }
 
-  // If it starts with /uploads, construct the full URL
+  // If it starts with /uploads, construct the full URL with proper encoding
   if (imagePath.startsWith("/uploads")) {
-    return `${BACKEND_BASE_URL}${imagePath}`;
+    // Encode Korean characters in the path
+    const encodedPath = imagePath.split('/').map(segment => 
+      segment === 'uploads' ? segment : encodeURIComponent(segment)
+    ).join('/');
+    return `${BACKEND_BASE_URL}${encodedPath}`;
   }
 
   // If it's just a filename, assume it's in uploads
-  return `${BACKEND_BASE_URL}/uploads/${imagePath}`;
+  return `${BACKEND_BASE_URL}/uploads/${encodeURIComponent(imagePath)}`;
 };
 
 // Create axios instance
@@ -63,13 +97,18 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Intentionally vulnerable: No secure logout
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      
+      // 로그인 페이지에서는 리다이렉트하지 않음 (에러 메시지 표시를 위해)
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
 
     if (error.response && error.response.status === 500) {
-      // Intentionally vulnerable: Stack trace exposure
+      // 서버 에러 로그는 콘솔에만 기록
       console.error("Server Error:", error.response.data);
-      toast.error(`Server Error: ${(error.response.data && error.response.data.error) || message}`);
+      // 사용자에게는 일반적인 메시지 표시
+      toast.error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
 
     return Promise.reject(error);
@@ -182,6 +221,10 @@ export const chatService = {
     api.post(`/chat/rooms/${roomId}/messages`, message),
   getMessages: (roomId, params = {}) =>
     api.get(`/chat/rooms/${roomId}/messages`, { params }),
+  getOrCreateChatRoom: (targetUserId, targetProductId) =>
+    api.post("/chat/rooms/get-or-create", { targetUserId, targetProductId }),
+  leaveChatRoom: (roomId) =>
+    api.post(`/chat/rooms/${roomId}/leave`),
 };
 
 // Transaction Service
@@ -209,6 +252,8 @@ export const communityService = {
   getPost: (postId) => api.get(`/community/posts/${postId}`),
   getPosts: (params = {}) => api.get("/community/posts", { params }),
   createPost: (postData) => api.post("/community/posts", postData),
+  updatePost: (postId, postData) => api.put(`/community/posts/${postId}`, postData),
+  deletePost: (postId) => api.delete(`/community/posts/${postId}`),
   
   // 댓글 관련
   createComment: (postId, commentData) => api.post(`/community/posts/${postId}/comments`, commentData),
@@ -238,6 +283,11 @@ export const uploadService = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+    });
+  },
+  deleteFile: (filename) => {
+    return api.delete("/upload/file", {
+      data: { filename }
     });
   },
 };

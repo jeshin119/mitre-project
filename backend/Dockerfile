@@ -1,44 +1,42 @@
-# Backend Dockerfile for Vintage Market
+FROM ubuntu:18.04
+ENV DEBIAN_FRONTEND=noninteractive
 
-FROM node:18-alpine
-
-# 작업 디렉토리 설정
-WORKDIR /app
-
-# 시스템 패키지 업데이트 및 필수 도구 설치
-RUN apk update && apk add --no-cache \
+# 🔑 Use default Ubuntu repositories which support multi-architecture
+RUN apt-get update && apt-get install -y \
+    curl \
+    sudo \
     python3 \
-    make \
-    g++ \
-    curl
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
 
-# 패키지 파일 복사
-COPY package*.json ./
+RUN useradd -m server && \
+    echo "server:123456" | chpasswd && \
+    echo 'server ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# 의존성 설치
+USER server
+WORKDIR /home/server/app
+
+ENV NODE_VERSION=10.13.0
+ENV NVM_DIR=/home/server/.nvm
+RUN mkdir -p $NVM_DIR && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+ENV NODE_PATH=$NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
+ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+RUN bash -c "source $NVM_DIR/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm alias default $NODE_VERSION && \
+    nvm use default"
+
+COPY --chown=server:server package*.json ./
 RUN npm install
-
-# PM2를 글로벌로 설치 (프로세스 관리용)
-RUN npm install -g pm2
-
-# 소스 코드 복사
-COPY . .
-
-# 업로드 디렉토리 생성
+COPY --chown=server:server . .
 RUN mkdir -p uploads logs
-
-# 권한 설정
 RUN chmod -R 755 uploads logs
 
-# 포트 노출
 EXPOSE 5000
 
-# PM2 ecosystem 파일 복사
-COPY ecosystem.config.js .
-
-# 헬스체크 추가
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 
-# 개발환경에서는 nodemon, 프로덕션에서는 PM2 사용
 CMD ["npm", "run", "dev"]

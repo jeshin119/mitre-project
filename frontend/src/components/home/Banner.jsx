@@ -33,6 +33,10 @@ const BannerContent = styled.div`
   text-align: center;
   color: white;
   padding: ${props => props.theme.spacing.xl};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${props => props.theme.spacing.md};
 `;
 
 const BannerTitle = styled.h2`
@@ -88,10 +92,10 @@ const Indicator = styled.button`
 const banners = [
   {
     id: 1,
-    title: '🎉 신규 회원 특별 혜택',
-    subtitle: '지금 가입하고 5,000 포인트 받으세요!',
+    title: '🎉 신규회원 특별혜택 쿠폰지급',
+    subtitle: '지금 가입하고 즉시 사용 가능한 할인쿠폰을 받아보세요!',
     link: '/register',
-    buttonText: '회원가입',
+    buttonText: '🎁 지금 가입하고 쿠폰 받기',
     gradient: ['#FF6B6B', '#4ECDC4'],
   },
   {

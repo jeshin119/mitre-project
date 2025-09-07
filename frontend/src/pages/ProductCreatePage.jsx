@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiUpload, FiX, FiMapPin, FiDollarSign, FiTag } from 'react-icons/fi';
-import { productService, getImageUrl } from '../services/api';
+import { productService, getImageUrl, uploadService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
@@ -282,6 +282,7 @@ const ProductCreatePage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
+  const isMountedRef = useRef(true);
 
   const categories = [
     '디지털/가전',
@@ -301,14 +302,20 @@ const ProductCreatePage = () => {
   ];
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (!user) {
-      navigate('/login');
+      history.push('/login');
       return;
     }
 
     if (isEdit) {
       fetchProduct();
     }
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [user, id, isEdit]);
 
   const fetchProduct = async () => {
@@ -353,9 +360,13 @@ const ProductCreatePage = () => {
       });
     } catch (error) {
       console.error('Failed to fetch product:', error);
-      navigate('/');
+      if (isMountedRef.current) {
+        navigate('/');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -390,14 +401,39 @@ const ProductCreatePage = () => {
     });
   };
 
-  const removeImage = (imageId, isExisting = false) => {
-    if (isExisting) {
-      setFormData(prev => ({
-        ...prev,
-        images: prev.images.filter((_, index) => index !== imageId)
-      }));
-    } else {
-      setImageFiles(prev => prev.filter(img => img.id !== imageId));
+  const removeImage = async (imageId, isExisting = false) => {
+    try {
+      if (isExisting) {
+        // For existing images, extract filename from the image path
+        const imageToRemove = formData.images[imageId];
+        if (imageToRemove) {
+          // Extract filename from URL (e.g., "/uploads/filename.jpg" -> "filename.jpg")
+          const filename = imageToRemove.split('/').pop();
+          
+          // Delete file from server
+          await uploadService.deleteFile(filename);
+          console.log(`Existing image deleted from server: ${filename}`);
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          images: prev.images.filter((_, index) => index !== imageId)
+        }));
+      } else {
+        // For new images, they haven't been uploaded to server yet, so just remove from state
+        setImageFiles(prev => prev.filter(img => img.id !== imageId));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      // Even if server deletion fails, remove from UI state
+      if (isExisting) {
+        setFormData(prev => ({
+          ...prev,
+          images: prev.images.filter((_, index) => index !== imageId)
+        }));
+      } else {
+        setImageFiles(prev => prev.filter(img => img.id !== imageId));
+      }
     }
   };
 
@@ -444,15 +480,23 @@ const ProductCreatePage = () => {
         userid: user && user.id
       };
 
-      if (imageFiles.length === 0) {
-        submitData.images = formData.images;
-      }
-
       if (isEdit) {
+        // 수정 모드에서는 기존 이미지 정보를 유지
+        if (imageFiles.length === 0) {
+          // 새로운 이미지 파일이 없으면 기존 이미지 유지
+          submitData.images = formData.images;
+        }
+        // 새로운 이미지 파일이 있으면 productService에서 처리
+        
         await productService.updateProduct(id, submitData, imageFiles);
         alert('상품이 수정되었습니다.');
-        navigate(`/products/${id}`);
+        history.push(`/products/${id}`);
       } else {
+        // 새 상품 등록 모드
+        if (imageFiles.length === 0) {
+          submitData.images = formData.images;
+        }
+        
         const response = await productService.createProduct(submitData, imageFiles);
         alert('상품이 등록되었습니다.');
         const newId = (response && response.data && response.data.id) || (response && response.data && response.data.data && response.data.data.id);
@@ -460,9 +504,13 @@ const ProductCreatePage = () => {
       }
     } catch (error) {
       console.error('Failed to save product:', error);
-      alert('상품 저장에 실패했습니다. 다시 시도해주세요.');
+      if (isMountedRef.current) {
+        alert('상품 저장에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

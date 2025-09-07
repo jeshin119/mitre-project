@@ -3,7 +3,8 @@ import { useParams, useHistory, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   FiArrowLeft, FiHeart, FiShare2, FiShoppingCart,
-  FiMapPin, FiEye, FiClock, FiUser, FiTag, FiShield
+  FiMapPin, FiEye, FiClock, FiUser, FiTag, FiShield,
+  FiEdit3, FiTrash2, FiMessageCircle
 } from 'react-icons/fi';
 import { productService, getImageUrl } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -179,6 +180,52 @@ const SecondaryButton = styled.button`
     border-color: ${props => props.theme.colors.primary};
     color: ${props => props.theme.colors.primary};
   }
+`;
+
+const EditButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: ${props => props.theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.theme.colors.primaryDark};
+  }
+`;
+
+const DeleteButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background: #c82333;
+  }
+`;
+
+const OwnerActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid ${props => props.theme.colors.border};
 `;
 
 const SellerSection = styled.div`
@@ -387,6 +434,82 @@ const LikeInfo = styled.div`
   color: ${props => props.theme.colors.textSecondary};
 `;
 
+const DeleteModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: ${props => props.show ? 'flex' : 'none'};
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const DeleteModalContent = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+`;
+
+const DeleteModalTitle = styled.h3`
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: ${props => props.theme.colors.text};
+`;
+
+const DeleteModalMessage = styled.p`
+  color: ${props => props.theme.colors.textSecondary};
+  margin-bottom: 2rem;
+  line-height: 1.5;
+`;
+
+const DeleteModalButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+`;
+
+const CancelButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: ${props => props.theme.colors.border};
+  color: ${props => props.theme.colors.text};
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  
+  &:hover {
+    background: ${props => props.theme.colors.textSecondary};
+  }
+`;
+
+const ConfirmDeleteButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  
+  &:hover {
+    background: #c82333;
+  }
+  
+  &:disabled {
+    background: ${props => props.theme.colors.border};
+    cursor: not-allowed;
+  }
+`;
+
 // 문자열(JSON) 또는 배열을 안전하게 배열로 변환
 const toImagesArray = (val) => {
   if (Array.isArray(val)) return val;
@@ -415,6 +538,8 @@ const ProductDetailPage = () => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -561,7 +686,7 @@ const ProductDetailPage = () => {
           searchParams.set('transactionId', transactionData.transactionId);
         }
         
-        navigate(`/purchase/success?${searchParams.toString()}`);
+        history.push(`/purchase/success?${searchParams.toString()}`);
       } else {
         // Handle failed purchase response
         const message = (response.data && response.data.message) || '구매에 실패했습니다.';
@@ -593,35 +718,56 @@ const ProductDetailPage = () => {
     window.location.reload();
   };
 
+  const handleEditProduct = () => {
+    history.push(`/products/${id}/edit`);
+  };
+
+  const handleChatManagement = () => {
+    // 채팅 페이지로 이동하여 해당 상품과 관련된 채팅방들을 표시
+    history.push(`/chat?productId=${id}`);
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteLoading(true);
+    try {
+      await productService.deleteProduct(id);
+      alert('상품이 삭제되었습니다.');
+      history.push('/products');
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      alert('상품 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   const handleLikeToggle = async () => {
     if (!user) {
-      navigate('/login');
+      history.push('/login');
       return;
     }
-
     try {
-      const newLikedState = !isLiked;
-      setIsLiked(newLikedState);
-
-      if (newLikedState) {
-        await productService.likeProduct(id);
-        // Update product likes count locally
+      const response = await productService.toggleLike(id);
+      if (response.data && response.data.success) {
+        setIsLiked(response.data.data.isLiked);
+        // Optimistically update likes count
         setProduct(prev => ({
           ...prev,
-          likes: (prev.likes || 0) + 1
-        }));
-      } else {
-        await productService.unlikeProduct(id);
-        // Update product likes count locally
-        setProduct(prev => ({
-          ...prev,
-          likes: Math.max((prev.likes || 0) - 1, 0)
+          likes: response.data.data.isLiked ? (prev.likes || 0) + 1 : (prev.likes || 1) - 1
         }));
       }
     } catch (error) {
       console.error('Failed to toggle like:', error);
-      // Revert the like state if API call fails
-      setIsLiked(!isLiked);
+      alert('좋아요 처리에 실패했습니다.');
     }
   };
 
@@ -637,6 +783,18 @@ const ProductDetailPage = () => {
       navigator.clipboard.writeText(window.location.href);
       alert('링크가 클립보드에 복사되었습니다.');
     }
+  };
+
+  const handleChatClick = () => {
+    if (!user) {
+      history.push('/login');
+      return;
+    }
+    if (user.id === product.userId) {
+      alert('자신과는 채팅할 수 없습니다.');
+      return;
+    }
+    history.push(`/chat?userId=${product.userId}&productId=${product.id}`);
   };
 
   const formatPrice = (price) => {
@@ -704,7 +862,7 @@ const ProductDetailPage = () => {
 
   return (
     <Container>
-      <BackButton onClick={() => navigate(-1)}>
+      <BackButton onClick={() => history.goBack()}>
         <FiArrowLeft />
         돌아가기
       </BackButton>
@@ -770,6 +928,14 @@ const ProductDetailPage = () => {
               <FiShoppingCart />
               {product.isSold ? '판매완료' : '구매하기'}
             </PrimaryButton>
+            <PrimaryButton 
+              onClick={handleChatClick}
+              disabled={product.isSold || (user && user.id === product.userId)}
+              style={{flex: 0.5, background: '#555'}}
+            >
+              <FiMessageCircle />
+              채팅하기
+            </PrimaryButton>
             <SecondaryButton onClick={handleLikeToggle}>
               <FiHeart color={isLiked ? '#ff4757' : 'currentColor'} />
             </SecondaryButton>
@@ -825,6 +991,24 @@ const ProductDetailPage = () => {
             >
               판매자 프로필 보기 →
             </Link>
+
+            {/* 판매자 본인인 경우 수정/삭제 버튼 표시 */}
+            {user && user.id === product.userId && (
+              <OwnerActions>
+                <EditButton onClick={handleEditProduct}>
+                  <FiEdit3 />
+                  수정하기
+                </EditButton>
+                <EditButton onClick={handleChatManagement} style={{background: '#28a745'}}>
+                  <FiMessageCircle />
+                  채팅 관리
+                </EditButton>
+                <DeleteButton onClick={handleDeleteClick}>
+                  <FiTrash2 />
+                  삭제하기
+                </DeleteButton>
+              </OwnerActions>
+            )}
           </SellerSection>
         </InfoSection>
       </ProductSection>
@@ -917,6 +1101,28 @@ const ProductDetailPage = () => {
         onClose={handleCreditModalClose}
         onRefresh={handleRefreshPage}
       />
+
+      {/* 삭제 확인 모달 */}
+      <DeleteModal show={showDeleteModal}>
+        <DeleteModalContent>
+          <DeleteModalTitle>상품 삭제</DeleteModalTitle>
+          <DeleteModalMessage>
+            정말로 이 상품을 삭제하시겠습니까?<br />
+            삭제된 상품은 복구할 수 없습니다.
+          </DeleteModalMessage>
+          <DeleteModalButtons>
+            <CancelButton onClick={handleDeleteCancel}>
+              취소
+            </CancelButton>
+            <ConfirmDeleteButton 
+              onClick={handleDeleteConfirm}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? '삭제 중...' : '삭제'}
+            </ConfirmDeleteButton>
+          </DeleteModalButtons>
+        </DeleteModalContent>
+      </DeleteModal>
     </Container>
   );
 };

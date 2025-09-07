@@ -1,8 +1,0 @@
-Started by user [8mha:////4MXTQX1jL8EQqVFK1jU0lG50bsJdXM1hFAp82pIqX7xtAAAAlx+LCAAAAAAAAABb85aBtbiIQTGjNKU4P08vOT+vOD8nVc83PyU1x6OyILUoJzMv2y+/JJUBAhiZGBgqihhk0NSjKDWzXb3RdlLBUSYGJk8GtpzUvPSSDB8G5tKinBIGIZ+sxLJE/ZzEvHT94JKizLx0a6BxUmjGOUNodHsLgAzWEgZu/dLi1CL9ktTEXCMAp/+LMsAAAAA=[0mteam2
-Obtained Jenkinsfile from git http://gitea:3000/team2/backend
-[8mha:////4LacHlbrgKTyGUyTObcTqL3N5539UWrMdtbXPq3xLFsPAAAAoh+LCAAAAAAAAABtjTEOwjAQBM8BClpKHuFItIiK1krDC0x8GCfWnbEdkooX8TX+gCESFVvtrLSa5wtWKcKBo5UdUu8otU4GP9jS5Mixv3geZcdn2TIl9igbHBs2eJyx4YwwR1SwULBGaj0nRzbDRnX6rmuvydanHMu2V1A5c4MHCFXMWcf8hSnC9jqYxPTz/BXAFEIGsfuclm8zQVqFvQAAAA==[0m[Pipeline] Start of Pipeline
-Aborted by [8mha:////4MXTQX1jL8EQqVFK1jU0lG50bsJdXM1hFAp82pIqX7xtAAAAlx+LCAAAAAAAAABb85aBtbiIQTGjNKU4P08vOT+vOD8nVc83PyU1x6OyILUoJzMv2y+/JJUBAhiZGBgqihhk0NSjKDWzXb3RdlLBUSYGJk8GtpzUvPSSDB8G5tKinBIGIZ+sxLJE/ZzEvHT94JKizLx0a6BxUmjGOUNodHsLgAzWEgZu/dLi1CL9ktTEXCMAp/+LMsAAAAA=[0mteam2
-[8mha:////4AQo34jGDna7XcJv92QY2xgIqaYqrqusz0/g6ZGsHK40AAAAoh+LCAAAAAAAAABtjTEOAiEURD9rLGwtPQSbaGmsbAmNJ0AWEZb8zwLrbuWJvJp3kLiJlZNMMm+a93rDOic4UbLcG+wdZu14DKOti0+U+lugiXu6ck2YKRguzSSpM+cFJRUDS1gDKwEbgzpQdmgLbIVXD9UGhba9lFS/o4DGdQM8gYlqLiqVL8wJdvexy4Q/z18BzDEWYIfa/QdLdtVavAAAAA==[0m[Pipeline] End of Pipeline
-org.jenkinsci.plugins.workflow.actions.ErrorAction$ErrorId: 2457b804-203d-4690-b3c6-63323588f9ce
-[Gitea] do not publish assets due to build being non-Successfully
-Finished: ABORTED

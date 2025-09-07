@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { communityService, uploadService } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiUpload, FiX, FiFile } from 'react-icons/fi';
@@ -230,7 +230,10 @@ const RemoveButton = styled.button`
 
 const CommunityPostCreatePage = () => {
   const history = useHistory();
+  const { id } = useParams();
   const isMountedRef = useRef(true);
+  const isEditMode = !!id;
+  
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -240,12 +243,52 @@ const CommunityPostCreatePage = () => {
   const [loading, setLoading] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(isEditMode);
   
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  // 수정 모드일 때 기존 게시글 데이터 로드
+  useEffect(() => {
+    if (isEditMode && id) {
+      fetchPostData();
+    }
+  }, [isEditMode, id]);
+
+  const fetchPostData = async () => {
+    try {
+      setInitialLoading(true);
+      const response = await communityService.getPost(id);
+      
+      if (response.data && response.data.success && response.data.data) {
+        const post = response.data.data;
+        setFormData({
+          title: post.title || '',
+          content: post.content || '',
+          category: post.category || '동네질문',
+          location: post.location || '',
+        });
+        
+        // 기존 첨부파일 설정
+        if (post.attachments && Array.isArray(post.attachments)) {
+          const filesWithId = post.attachments.map((file, index) => ({
+            ...file,
+            id: file.id || `existing-${index}-${Date.now()}`
+          }));
+          setAttachedFiles(filesWithId);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch post data:', error);
+      toast.error('게시글 데이터를 불러오는데 실패했습니다.');
+      history.push('/community');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const categories = ['동네질문', '분실/실종', '동네소식', '맛집/가게'];
 
@@ -348,8 +391,30 @@ const CommunityPostCreatePage = () => {
     e.currentTarget.classList.remove('dragover');
   };
 
-  const removeFile = (fileId) => {
-    setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+  const removeFile = async (fileId) => {
+    try {
+      // Find the file to be removed
+      const fileToRemove = attachedFiles.find(file => file.id === fileId);
+      
+      if (fileToRemove && fileToRemove.url) {
+        // Extract filename from URL (e.g., "/uploads/filename.jpg" -> "filename.jpg")
+        const filename = fileToRemove.url.split('/').pop();
+        
+        // Delete file from server
+        await uploadService.deleteFile(filename);
+        console.log(`File deleted from server: ${filename}`);
+      }
+      
+      // Remove file from state
+      setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+      toast.success('파일이 삭제되었습니다.');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('파일 삭제에 실패했습니다.');
+      
+      // Even if server deletion fails, remove from UI state
+      setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -371,8 +436,11 @@ const CommunityPostCreatePage = () => {
       
       // API 호출 (JSON 전송)
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-      const response = await fetch(`${API_BASE_URL}/community/posts`, {
-        method: 'POST',
+      const url = isEditMode ? `${API_BASE_URL}/community/posts/${id}` : `${API_BASE_URL}/community/posts`;
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -381,14 +449,19 @@ const CommunityPostCreatePage = () => {
       });
       
       if (response.ok) {
-        toast.success('게시글이 성공적으로 작성되었습니다!');
-        history.push('/community');
+        if (isEditMode) {
+          toast.success('게시글이 성공적으로 수정되었습니다!');
+          history.push(`/community/${id}`);
+        } else {
+          toast.success('게시글이 성공적으로 작성되었습니다!');
+          history.push('/community');
+        }
       } else {
-        throw new Error('Failed to create post');
+        throw new Error(isEditMode ? 'Failed to update post' : 'Failed to create post');
       }
     } catch (error) {
-      console.error('Failed to create community post:', error);
-      toast.error('게시글 작성에 실패했습니다.');
+      console.error('Failed to submit community post:', error);
+      toast.error(isEditMode ? '게시글 수정에 실패했습니다.' : '게시글 작성에 실패했습니다.');
     } finally {
       // Only update state if component is still mounted
       if (isMountedRef.current) {
@@ -397,11 +470,21 @@ const CommunityPostCreatePage = () => {
     }
   };
 
+  if (initialLoading) {
+    return (
+      <Container>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          게시글 데이터를 불러오는 중...
+        </div>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Header>
-        <Title>새 게시글 작성</Title>
-        <Subtitle>우리 동네에 궁금한 점이나 소식을 공유해보세요!</Subtitle>
+        <Title>{isEditMode ? '게시글 수정' : '새 게시글 작성'}</Title>
+        <Subtitle>{isEditMode ? '게시글을 수정해보세요!' : '우리 동네에 궁금한 점이나 소식을 공유해보세요!'}</Subtitle>
       </Header>
       <Form onSubmit={handleSubmit}>
         <FormSection>
@@ -510,7 +593,7 @@ const CommunityPostCreatePage = () => {
             취소
           </Button>
           <Button type="submit" primary disabled={loading}>
-            {loading ? '작성 중...' : '게시글 작성'}
+            {loading ? (isEditMode ? '수정 중...' : '작성 중...') : (isEditMode ? '게시글 수정' : '게시글 작성')}
           </Button>
         </ButtonGroup>
       </Form>

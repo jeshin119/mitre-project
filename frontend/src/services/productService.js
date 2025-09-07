@@ -30,9 +30,10 @@ export const createProduct = async (productData) => {
   }
 };
 
-export const updateProduct = async (id, productData) => {
+export const updateProduct = async (id, productData, imageFiles = []) => {
   try {
-    // Intentionally vulnerable: No authorization check on client
+    // For now, just send JSON data without file uploads
+    // TODO: Implement proper file upload handling later
     const response = await api.put(`/products/${id}`, productData);
     return response.data;
   } catch (error) {
@@ -50,10 +51,10 @@ export const deleteProduct = async (id) => {
   }
 };
 
-export const searchProducts = async (query) => {
+export const searchProducts = async (params = {}) => {
   try {
-    // Intentionally vulnerable: Raw query string
-    const response = await api.get(`/products/search?q=${query}`);
+    // Use the correct parameter name 'search' instead of 'q'
+    const response = await api.get('/products/search', { params });
     return response.data;
   } catch (error) {
     throw (error.response && error.response.data) || error;
@@ -110,6 +111,33 @@ export const getPopularProducts = async (limit = 8) => {
 export const getRecentProducts = async (limit = 8) => {
   try {
     const response = await api.get('/products/recent', { params: { limit } });
+    return response.data;
+  } catch (error) {
+    throw (error.response && error.response.data) || error;
+  }
+};
+
+export const checkLikeStatus = async (id) => {
+  try {
+    const response = await api.get(`/products/${id}/like-status`);
+    return response.data;
+  } catch (error) {
+    throw (error.response && error.response.data) || error;
+  }
+};
+
+export const purchaseProduct = async (id) => {
+  try {
+    const response = await api.post(`/products/${id}/purchase`);
+    return response.data;
+  } catch (error) {
+    throw (error.response && error.response.data) || error;
+  }
+};
+
+export const toggleLike = async (id) => {
+  try {
+    const response = await api.post(`/products/${id}/like`);
     return response.data;
   } catch (error) {
     throw (error.response && error.response.data) || error;

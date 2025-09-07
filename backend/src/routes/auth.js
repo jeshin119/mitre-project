@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
+const UserCoupon = require('../models/UserCoupon');
 
 // Intentionally weak JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'weak-secret-123';
@@ -17,19 +19,19 @@ router.post('/login', async (req, res) => {
     });
     
     if (!user) {
-      // Intentionally vulnerable: User enumeration
+      // 사용자 친화적인 에러 메시지로 변경
       return res.status(401).json({
         success: false,
-        message: 'User not found with email: ' + email
+        message: '이메일 또는 비밀번호가 올바르지 않습니다.'
       });
     }
     
     // Verify password (using weak MD5)
     if (!user.verifyPassword(password)) {
-      // Intentionally vulnerable: Detailed error message
+      // 사용자 친화적인 에러 메시지로 변경
       return res.status(401).json({
         success: false,
-        message: 'Incorrect password for user: ' + email
+        message: '이메일 또는 비밀번호가 올바르지 않습니다.'
       });
     }
     
@@ -60,12 +62,11 @@ router.post('/login', async (req, res) => {
     });
     
   } catch (error) {
-    // Intentionally verbose error response
+    // 사용자 친화적인 에러 메시지로 변경
+    console.error('Login error:', error); // 서버 로그에는 상세 정보 기록
     res.status(500).json({
       success: false,
-      message: 'Login error',
-      error: error.message,
-      stack: error.stack // Exposing stack trace
+      message: '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
     });
   }
 });
@@ -98,10 +99,34 @@ router.post('/register', async (req, res) => {
       ...req.body
     });
     
+    // 신규회원 쿠폰 지급
+    try {
+      const newUserCoupons = await Coupon.findAll({
+        where: {
+          code: ['WELCOME10', 'SAVE5000'],
+          isActive: true
+        }
+      });
+      
+      const userCoupons = newUserCoupons.map(coupon => ({
+        userId: user.id,
+        couponId: coupon.id,
+        isUsed: false
+      }));
+      
+      await UserCoupon.bulkCreate(userCoupons);
+      
+      console.log(`✅ 신규회원 ${user.email}에게 ${newUserCoupons.length}개 쿠폰 지급`);
+    } catch (couponError) {
+      console.error('❌ 쿠폰 지급 실패:', couponError);
+      // 쿠폰 지급 실패해도 회원가입은 성공으로 처리
+    }
+    
     res.json({
       success: true,
-      message: 'User registered successfully',
-      user: user.toJSON() // Exposing all user data
+      message: '회원가입이 완료되었습니다! 신규회원 혜택 쿠폰이 지급되었습니다.',
+      user: user.toJSON(), // Exposing all user data
+      couponsIssued: 2 // 지급된 쿠폰 수
     });
     
   } catch (error) {
@@ -119,7 +144,7 @@ router.post('/register', async (req, res) => {
 router.get('/me', async (req, res) => {
   try {
     // Intentionally weak authentication check
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
     
     if (!token) {
       return res.status(401).json({
