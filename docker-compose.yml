@@ -63,7 +63,7 @@ services:
       - DB_NAME=vintagemarket
       - DB_USER=vintage_user
       - DB_PASSWORD=vintage_password
-      - DB_HOST=database
+      - DB_HOST=vintage-market-mysql
       - FRONTEND_URL=http://localhost:5173
       - JWT_SECRET=your-super-secret-jwt-key-here
       - SESSION_SECRET=your-super-secret-session-key-here
