@@ -27,6 +27,10 @@ services:
     build:
       context: ./frontend
       target: development
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL}
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+        - VITE_API_URL=${VITE_API_URL}
     container_name: vintage-market-frontend
     ports:
       # frontend 포트는 충돌이 없으므로 그대로 5173 사용
@@ -35,9 +39,11 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_API_URL=${VITE_API_URL}
-    # volumes:
-    #   - ./frontend:/app
-    #   - /app/node_modules
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost:3001}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     networks:
@@ -54,18 +60,20 @@ services:
       - NODE_ENV=development
       - DEBUG=*
       - PORT=3000 # 컨테이너 내부 포트는 그대로 3000 사용
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=vintagemarket
+      - DB_USER=vintage_user
+      - DB_PASSWORD=vintage_password
       - DB_HOST=database
-      - FRONTEND_URL=${FRONTEND_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
+      - FRONTEND_URL=http://localhost:5173
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - SESSION_SECRET=your-super-secret-session-key-here
+      - BACKEND_BASE_URL=http://localhost:3001
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - ./backend:/home/server/app
+      - /home/server/app/node_modules
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - dmz_net
       - internal_net
@@ -75,27 +83,37 @@ services:
     image: mysql:8.0
     container_name: vintage-market-mysql
     hostname: database
-    command: --default-authentication-plugin=mysql_native_password
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: vintagemarket
+      MYSQL_USER: vintage_user
+      MYSQL_PASSWORD: vintage_password
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 30s 
     networks:
       - internal_net
 
   phpmyadmin:
-    image: linuxserver/phpmyadmin
+    # image: linuxserver/phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
     container_name: vintage-market-phpmyadmin
     restart: unless-stopped
     environment:
       PMA_HOST: database
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root_password
+      PHP_UPLOAD_MAX_FILESIZE: 1G
+      #개발용 ENV설정
+      PMA_ABSOLUTE_URI: http://localhost:8081/
     ports:
       # [수정] Jenkins와의 충돌을 피해 8081 포트로 명확히 지정
       - "8081:80"
@@ -108,8 +126,6 @@ services:
     build: ./user_pc
     container_name: user-pc
     hostname: user-pc
-    ports:
-      - "22222:22"
     command: tail -f /dev/null
     networks:
       - internal_net
@@ -130,6 +146,8 @@ services:
     networks:
       - dev_net
       - internal_net
+    profiles:
+      - production  # production 프로필에서만 실행
 
   gitea:
     image: gitea/gitea:latest
@@ -146,6 +164,8 @@ services:
     networks:
       - internal_net
       - dev_net
+    profiles:
+      - production  # production 프로필에서만 실행
 
 # 3. 볼륨 정의
 volumes:
